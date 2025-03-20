@@ -10,6 +10,8 @@ const  http  = require('http')
 const authRoutes = require('./routes/authRoutes');
 const accountRoutes = require('./routes/accountRoutes')
 const monitorSocket = require('./service/monitorService')
+const backupRoutes = require('./routes/backupRoutes')
+const recoveryRoutes = require('./routes/recoveryRoutes');
 
 //Middlewares
 const app = express();
@@ -41,6 +43,8 @@ app.use((req, res, next) => {
 // Routes
 app.use('/auth-api', authRoutes);
 app.use('/accounts', accountRoutes);
+app.use('/api', backupRoutes)
+app.use('/api/recovery', recoveryRoutes);
 
 
 // Connect to MongoDB

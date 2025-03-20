@@ -1,0 +1,15 @@
+## GET FINANCIAL DATA
+###
+GET http://localhost:8060/api/get-finance-data
+
+## GET FINANCIAL DATA TO CORE
+###
+GET http://localhost:8060/api/get-finance-data-core
+
+## RECOVER DATA TO FINANCE
+###
+POST http://localhost:8060/api/recovery/recover-data
+
+## RECOVER ALL DATA TO FINANCE
+###
+POST http://localhost:8060/api/recovery/recover-all
