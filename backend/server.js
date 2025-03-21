@@ -46,7 +46,6 @@ app.use('/accounts', accountRoutes);
 app.use('/api', backupRoutes)
 app.use('/api/recovery', recoveryRoutes);
 
-
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {

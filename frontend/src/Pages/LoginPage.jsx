@@ -58,9 +58,9 @@ const LoginPage = () => {
       {/* Left section for logo and login */}
       <div className="w-1/2 bg-white flex flex-col items-center justify-center p-8">
         {/* Logo */}
-        <div className="mb-6">
+        <div className="flex flex-col justify-center mb-6">
           <img src={Logo} alt="Finance Department" className="h-23 w-auto" />
-          <h1 className="text-2xl font-bold mb-4">Finance Department</h1>
+          <h1 className="text-2xl font-bold mb-4 mt-2 ml-4">CORE 3 SYSTEM</h1>
         </div>
 
         {/* Sign In Form */}
