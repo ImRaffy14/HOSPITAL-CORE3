@@ -14,6 +14,8 @@ import HrData from '../Components/HrData';
 import axios from 'axios';
 import Logo from '../../assets/Nodado.jfif';
 import { CiDatabase } from "react-icons/ci";
+import { IoTerminal } from "react-icons/io5";
+import Terminal from "../Components/terminal"
 
 function AdminPage() {
     const [isToggled, setIsToggled] = useState(true);
@@ -87,6 +89,12 @@ function AdminPage() {
                                     <li className='font-semibold'><NavLink to="hrData" activeClassName="bg-gray-700"><CiDatabase />HR DATA</NavLink></li>
                                     <h1 className='text-center border-b border-t border-gray-400 border-dotted text-md bg-slate-100'>USER MANAGEMENT</h1>
                                     <li className='font-semibold'><NavLink to="accountsManagement" activeClassName="bg-gray-700"><MdSupervisorAccount />USER MANAGEMENT</NavLink></li>
+                                    {profile.role === "Superadmin" && 
+                                    <>
+                                    <h1 className='text-center border-b border-t border-gray-400 border-dotted text-md bg-slate-100'>SYSTEM MONITORING</h1>
+                                    <li className='font-semibold'><NavLink to="terminal" activeClassName="bg-gray-700"><IoTerminal />TERMINAL</NavLink></li>
+                                    </>
+                                    }
                                 </ul>
                         </ul>
                     </div>
@@ -119,6 +127,7 @@ function AdminPage() {
                             <Route path="coreData" element={<CoreData userData={profile}/>} />
                             <Route path="adminData" element={<AdminData userData={profile}/>} />
                             <Route path="hrData" element={<HrData userData={profile}/>} />
+                            <Route path="terminal" element={<Terminal/>} />
                         </Routes>
                     </div>
                 </div>
