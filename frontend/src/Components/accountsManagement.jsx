@@ -20,6 +20,7 @@ function accountsManagement() {
     fullName: '',
     email: '',
     password: '',
+    role: 'Staff'
   })
 
   const urlAPI = import.meta.env.VITE_API_URL
@@ -28,8 +29,9 @@ function accountsManagement() {
   const columns = [
     { name: 'Account ID', selector: row => row._id },
     { name: 'Username', selector: row => row.username },
-    { name: 'Full Name,', selector: row => row.fullName },
-    { name: 'Email,', selector: row => row.email },
+    { name: 'Full Name', selector: row => row.fullName },
+    { name: 'Email', selector: row => row.email },
+    { name: 'Role', selector: row => row.role },
     { name: 'View', 
       cell: (row) => (
         <div className='flex justify-center text-lg bg-cyan-600 h-10 w-10 rounded-lg items-center transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer'
@@ -319,6 +321,24 @@ function accountsManagement() {
                 />
               </div>
 
+              {/* Role Dropdown */}
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select
+                  id="role"
+                  name="role"
+                  value={formData.role}
+                  onChange={(e) => setFormData((prevData) => ({...prevData, role: e.target.value}))}
+                  className="select select-bordered w-full"
+                  required
+                >
+                  <option value="">Select a role</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Superadmin">Superadmin</option>
+                </select>
+              </div>
+
               {errorRegister && <h1 className="text-red-500">{errorRegister}</h1>}
 
               <div className="modal-action">
@@ -344,6 +364,7 @@ function accountsManagement() {
               <p><strong>Username:</strong> {selectedData.username}</p>
               <p><strong>Full Name:</strong> {selectedData.fullName}</p>
               <p><strong>Email:</strong> {selectedData.email}</p>
+              <p><strong>Role:</strong> {selectedData.role}</p>
             </div>
             
             <div className="modal-action">
@@ -412,6 +433,24 @@ function accountsManagement() {
                   onChange={(e)=> setSelectedData((prevData) => ({...prevData, password: e.target.value}))}
                   className="input input-bordered w-full"
                 />
+              </div>
+
+              {/* Role Dropdown */}
+              <div>
+                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                <select
+                  id="role"
+                  name="role"
+                  value={selectedData.role}
+                  onChange={(e) => setSelectedData((prevData) => ({...prevData, role: e.target.value}))}
+                  className="select select-bordered w-full"
+                  required
+                >
+                  <option value="">Select a role</option>
+                  <option value="Staff">Staff</option>
+                  <option value="Admin">Admin</option>
+                  <option value="Superadmin">Superadmin</option>
+                </select>
               </div>
 
               {errorUpadte && <h1 className="text-red-500">{errorUpadte}</h1>}

@@ -4,7 +4,7 @@ const User = require('../models/UserData');
 
 // Registration controller
 const register = async (req, res) => {
-  const { username, password, email, fullName } = req.body;
+  const { username, password, email, fullName, role } = req.body;
 
   try {
     // Check if user already exists
@@ -21,7 +21,8 @@ const register = async (req, res) => {
       username,
       password: hashedPassword,
       email,
-      fullName
+      fullName,
+      role
     });
 
     // Save the user to the database
@@ -41,7 +42,7 @@ const login = async (req, res) => {
 
   try {
     // Find the user by username
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email: username });
     if (!user) {
       return res.status(400).json({ success: false, message: 'User not found' });
     }

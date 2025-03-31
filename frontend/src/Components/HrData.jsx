@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 
-function HrData() {
+function HrData({ userData }) {
     // Dummy data for HR systems
     const dummyData = {
         employees: [
@@ -35,6 +35,10 @@ function HrData() {
     const [searchQuery, setSearchQuery] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
+    const [unblurredRows, setUnblurredRows] = useState({});
+    const [role, setRole] = useState(userData.role);
+    const [canViewData, setCanViewData] = useState(true);
+    const [canBackupRecover, setCanBackupRecover] = useState(true);
 
     // Handle manual backup
     const handleManualBackup = () => {
@@ -44,7 +48,7 @@ function HrData() {
         setTimeout(() => {
             toast.success("Manual backup completed successfully!", { position: "top-right" });
             setIsBackupLoading(false);
-        }, 2000); // Simulate a 2-second delay
+        }, 2000);
     };
 
     // Handle automated backup toggle
@@ -77,6 +81,20 @@ function HrData() {
         }, 2000);
     };
 
+    // Blur functionality
+    const toggleRowBlur = (rowId) => {
+        setUnblurredRows(prev => ({
+            ...prev,
+            [rowId]: !prev[rowId]
+        }));
+    };
+
+    const renderBlurredCell = (value, rowId) => (
+        <span className={`transition-all duration-200 ${canViewData && unblurredRows[rowId] ? '' : 'filter blur-sm'}`}>
+            {value}
+        </span>
+    );
+
     // Filter data based on search query
     const filteredData = data[selectedModel].filter((item) =>
         Object.values(item).some((value) =>
@@ -94,6 +112,42 @@ function HrData() {
 
     // Render table based on selected model
     const renderTable = () => {
+        if (!canViewData) {
+            return (
+                <div className="flex flex-col items-center justify-center p-8">
+                    <div className="alert alert-warning max-w-md mb-4">
+                        You don't have permission to view sensitive HR data.
+                    </div>
+                    <div className="bg-white bg-opacity-90 rounded-lg p-8 filter blur-lg w-full">
+                        <table className="table w-full">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Data</th>
+                                    <th>Data</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {[1, 2, 3].map((i) => (
+                                    <tr key={i}>
+                                        <td className="blur-sm">########</td>
+                                        <td className="blur-sm">########</td>
+                                        <td className="blur-sm">########</td>
+                                        <td>
+                                            <button className="btn btn-sm btn-disabled blur-sm">
+                                                ########
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
         switch (selectedModel) {
             case "employees":
                 return (
@@ -113,18 +167,28 @@ function HrData() {
                                 {currentItems.map((item) => (
                                     <tr key={item._id}>
                                         <td>{item._id}</td>
-                                        <td>{item.name}</td>
-                                        <td>{item.position}</td>
-                                        <td>{item.department}</td>
-                                        <td>{item.salary}</td>
+                                        <td>{renderBlurredCell(item.name, item._id)}</td>
+                                        <td>{renderBlurredCell(item.position, item._id)}</td>
+                                        <td>{renderBlurredCell(item.department, item._id)}</td>
+                                        <td>{renderBlurredCell(item.salary, item._id)}</td>
                                         <td>
-                                            <button
-                                                onClick={() => handleRecovery(item._id, selectedModel)}
-                                                className="btn btn-sm btn-warning"
-                                                disabled={isLoading}
-                                            >
-                                                Recover
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleRecovery(item._id, selectedModel)}
+                                                    className="btn btn-sm btn-warning"
+                                                    disabled={isLoading || !canBackupRecover}
+                                                >
+                                                    Recover
+                                                </button>
+                                                {role === 'Superadmin' && 
+                                                <button
+                                                    onClick={() => toggleRowBlur(item._id)}
+                                                    className="btn btn-sm btn-info"
+                                                >
+                                                    {unblurredRows[item._id] ? 'Blur' : 'Show'}
+                                                </button>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -149,17 +213,27 @@ function HrData() {
                                 {currentItems.map((item) => (
                                     <tr key={item._id}>
                                         <td>{item._id}</td>
-                                        <td>{item.employeeId}</td>
-                                        <td>{item.date}</td>
-                                        <td>{item.status}</td>
+                                        <td>{renderBlurredCell(item.employeeId, item._id)}</td>
+                                        <td>{renderBlurredCell(item.date, item._id)}</td>
+                                        <td>{renderBlurredCell(item.status, item._id)}</td>
                                         <td>
-                                            <button
-                                                onClick={() => handleRecovery(item._id, selectedModel)}
-                                                className="btn btn-sm btn-warning"
-                                                disabled={isLoading}
-                                            >
-                                                Recover
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleRecovery(item._id, selectedModel)}
+                                                    className="btn btn-sm btn-warning"
+                                                    disabled={isLoading || !canBackupRecover}
+                                                >
+                                                    Recover
+                                                </button>
+                                                {role === 'Superadmin' && 
+                                                <button
+                                                    onClick={() => toggleRowBlur(item._id)}
+                                                    className="btn btn-sm btn-info"
+                                                >
+                                                    {unblurredRows[item._id] ? 'Blur' : 'Show'}
+                                                </button>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -185,18 +259,28 @@ function HrData() {
                                 {currentItems.map((item) => (
                                     <tr key={item._id}>
                                         <td>{item._id}</td>
-                                        <td>{item.employeeId}</td>
-                                        <td>{item.startDate}</td>
-                                        <td>{item.endDate}</td>
-                                        <td>{item.status}</td>
+                                        <td>{renderBlurredCell(item.employeeId, item._id)}</td>
+                                        <td>{renderBlurredCell(item.startDate, item._id)}</td>
+                                        <td>{renderBlurredCell(item.endDate, item._id)}</td>
+                                        <td>{renderBlurredCell(item.status, item._id)}</td>
                                         <td>
-                                            <button
-                                                onClick={() => handleRecovery(item._id, selectedModel)}
-                                                className="btn btn-sm btn-warning"
-                                                disabled={isLoading}
-                                            >
-                                                Recover
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleRecovery(item._id, selectedModel)}
+                                                    className="btn btn-sm btn-warning"
+                                                    disabled={isLoading || !canBackupRecover}
+                                                >
+                                                    Recover
+                                                </button>
+                                                {role === 'Superadmin' && 
+                                                <button
+                                                    onClick={() => toggleRowBlur(item._id)}
+                                                    className="btn btn-sm btn-info"
+                                                >
+                                                    {unblurredRows[item._id] ? 'Blur' : 'Show'}
+                                                </button>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -222,18 +306,28 @@ function HrData() {
                                 {currentItems.map((item) => (
                                     <tr key={item._id}>
                                         <td>{item._id}</td>
-                                        <td>{item.employeeId}</td>
-                                        <td>{item.month}</td>
-                                        <td>{item.salary}</td>
-                                        <td>{item.status}</td>
+                                        <td>{renderBlurredCell(item.employeeId, item._id)}</td>
+                                        <td>{renderBlurredCell(item.month, item._id)}</td>
+                                        <td>{renderBlurredCell(item.salary, item._id)}</td>
+                                        <td>{renderBlurredCell(item.status, item._id)}</td>
                                         <td>
-                                            <button
-                                                onClick={() => handleRecovery(item._id, selectedModel)}
-                                                className="btn btn-sm btn-warning"
-                                                disabled={isLoading}
-                                            >
-                                                Recover
-                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleRecovery(item._id, selectedModel)}
+                                                    className="btn btn-sm btn-warning"
+                                                    disabled={isLoading || !canBackupRecover}
+                                                >
+                                                    Recover
+                                                </button>
+                                                {role === 'Superadmin' && 
+                                                <button
+                                                    onClick={() => toggleRowBlur(item._id)}
+                                                    className="btn btn-sm btn-info"
+                                                >
+                                                    {unblurredRows[item._id] ? 'Blur' : 'Show'}
+                                                </button>
+                                                }
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
@@ -250,10 +344,31 @@ function HrData() {
         <div className="h-screen w-full p-8 bg-base-200">
             <div className="max-w-screen-4xl mx-auto">
                 <h1 className="text-2xl font-bold mb-4">HR Data Management</h1>
+                
+                {role === "Admin" ? (
+                    <div className="alert alert-warning mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <span>You have limited access. Sensitive data is blurred by default.</span>
+                    </div>
+                ) : (
+                    <div className="alert alert-info mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Click "Show" on each row to reveal details. Data is blurred by default.</span>
+                    </div>
+                )}
+                
                 <div className="flex gap-4 mb-4">
                     {/* Manual Backup Button */}
                     {!isBackupLoading ? (
-                        <button onClick={handleManualBackup} className="btn btn-primary">
+                        <button 
+                            onClick={handleManualBackup} 
+                            className="btn btn-primary"
+                            disabled={!canBackupRecover}
+                        >
                             Manual Backup
                         </button>
                     ) : (
@@ -266,6 +381,7 @@ function HrData() {
                     <button
                         onClick={handleAutomatedBackup}
                         className={`btn ${isAutoBackupEnabled ? "btn-success" : "btn-secondary"}`}
+                        disabled={!canBackupRecover}
                     >
                         {isAutoBackupEnabled ? "Disable Auto Backup" : "Enable Auto Backup"}
                     </button>
@@ -274,7 +390,7 @@ function HrData() {
                     <button
                         onClick={handleRecoverAll}
                         className="btn btn-warning"
-                        disabled={isRecoverAllLoading}
+                        disabled={isRecoverAllLoading || !canBackupRecover}
                     >
                         {isRecoverAllLoading ? "Recovering All Data..." : "Recover All Data"}
                     </button>

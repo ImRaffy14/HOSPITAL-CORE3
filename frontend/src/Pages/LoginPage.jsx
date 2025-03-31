@@ -68,8 +68,8 @@ const LoginPage = () => {
         <form onSubmit={handleLogin} className="space-y-4 w-64">
           <div>
             <input
-              type="text"
-              placeholder="Username"
+              type="email"
+              placeholder="Email"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full p-2 border rounded bg-gray-100"

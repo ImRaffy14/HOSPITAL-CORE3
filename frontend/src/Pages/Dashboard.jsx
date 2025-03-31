@@ -114,11 +114,11 @@ function AdminPage() {
                             <Route path="accountsManagement" element={<AccountsManagement />} />
                             <Route path="/" element={<Navigate to="/Dashboard/overview" />} />
                             <Route path="overview" element={<Overview userData={profile} />} />
-                            <Route path="financeData" element={<FinanceData/>} />
-                            <Route path="logisticData" element={<LogsticData/>} />
-                            <Route path="coreData" element={<CoreData/>} />
-                            <Route path="adminData" element={<AdminData/>} />
-                            <Route path="hrData" element={<HrData/>} />
+                            <Route path="financeData" element={<FinanceData userData={profile}/>} />
+                            <Route path="logisticData" element={<LogsticData userData={profile}/>} />
+                            <Route path="coreData" element={<CoreData userData={profile}/>} />
+                            <Route path="adminData" element={<AdminData userData={profile}/>} />
+                            <Route path="hrData" element={<HrData userData={profile}/>} />
                         </Routes>
                     </div>
                 </div>
