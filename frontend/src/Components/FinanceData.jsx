@@ -18,6 +18,7 @@ function FinanceData({ userData }) {
     const [canViewData, setCanViewData] = useState(false);
     const [canBackupRecover, setCanBackupRecover] = useState(false);
     const [unblurredRows, setUnblurredRows] = useState({});
+    const [allRowsBlurred, setAllRowsBlurred] = useState(true);
 
     const urlAPI = import.meta.env.VITE_API_URL;
 
@@ -31,10 +32,10 @@ function FinanceData({ userData }) {
             try {
                 const response = await axios.get(`${urlAPI}/api/get-finance-data-core`);
                 setData(response.data);
-                if(userData.role === "Superadmin"){
+                if (userData.role === "Superadmin") {
                     setCanViewData(true)
                     setCanBackupRecover(true)
-                }else{
+                } else {
                     setCanViewData(false)
                     setCanBackupRecover(true)
                 }
@@ -54,6 +55,19 @@ function FinanceData({ userData }) {
             ...prev,
             [rowId]: !prev[rowId]
         }));
+    };
+
+    const toggleAllRowsBlur = () => {
+        setAllRowsBlurred(prev => !prev);
+        if (allRowsBlurred) {
+            const newUnblurredRows = {};
+            currentItems.forEach(item => {
+                newUnblurredRows[item._id] = true;
+            });
+            setUnblurredRows(newUnblurredRows);
+        } else {
+            setUnblurredRows({});
+        }
     };
 
     const automatedBackup = () => {
@@ -423,11 +437,11 @@ function FinanceData({ userData }) {
         <div className="h-screen w-full p-8 bg-base-200">
             <div className="max-w-screen-4xl mx-auto">
                 <h1 className="text-2xl font-bold mb-4">Finance Data Management</h1>
-                
+
                 <div className="flex gap-4 mb-4">
                     {!isLoading ? (
-                        <button 
-                            onClick={handleManualBackup} 
+                        <button
+                            onClick={handleManualBackup}
                             className="btn btn-primary"
                             disabled={!canBackupRecover}
                         >
@@ -445,7 +459,7 @@ function FinanceData({ userData }) {
                     >
                         {isClicked ? "Disable Auto Backup" : "Enable Auto Backup"}
                     </button>
-                    
+
                     <button
                         onClick={handleRecoverAll}
                         className="btn btn-warning"
@@ -453,6 +467,15 @@ function FinanceData({ userData }) {
                     >
                         {isRecoverAllLoading ? "Recovering All Data..." : "Recover All Data"}
                     </button>
+                    {canViewData && 
+                        <button
+                        onClick={toggleAllRowsBlur}
+                        className="btn btn-info"
+                        >
+                            {allRowsBlurred ? 'Show All' : 'Blur All'}
+                        </button>
+                    }
+
                 </div>
 
                 {!canViewData ? (
@@ -479,7 +502,7 @@ function FinanceData({ userData }) {
                         <option value="insuranceClaim">Insurance Claim</option>
                         <option value="userData">User Data</option>
                     </select>
-                    
+
                     <input
                         type="text"
                         placeholder="Search..."
@@ -487,9 +510,9 @@ function FinanceData({ userData }) {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="input input-bordered w-full mb-4"
                     />
-                    
+
                     {renderTable()}
-                    
+
                     <div className="flex justify-center mt-4">
                         {Array.from(
                             { length: Math.ceil(filteredData.length / itemsPerPage) },

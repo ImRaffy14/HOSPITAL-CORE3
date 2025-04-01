@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from 'react';
 import { toast } from "react-toastify";
 
 function HospitalAdminData({ userData }) {
@@ -65,29 +65,155 @@ function HospitalAdminData({ userData }) {
             }
         ],
         legalCases: [
+            // Licensing and Regulatory Compliance
             {
                 _id: 1,
-                caseNumber: "HLC-2023-001",
-                title: "Malpractice Claim",
+                caseNumber: "DOC-2023-L001",
+                title: "DOH License Renewal Application",
+                type: "Regulatory Compliance",
                 status: "Pending",
-                patientInvolved: "PT-5001",
-                jurisdiction: "State Medical Board",
-                assignedTo: "Hospital Legal Team",
-                incidentDate: "2023-01-15",
-                lastAction: "Response submitted",
-                nextHearing: "2023-07-10"
+                jurisdiction: "DOH Center for Health Development",
+                dueDate: "2023-12-15",
+                documents: [
+                    "Hospital License Application Form",
+                    "Fire Safety Inspection Certificate",
+                    "Sanitary Permit",
+                    "Proof of PhilHealth Accreditation"
+                ]
             },
             {
                 _id: 2,
-                caseNumber: "HLC-2023-002",
-                title: "HIPAA Compliance Review",
+                caseNumber: "DOC-2023-P001",
+                title: "PhilHealth Accreditation Documents",
+                type: "Health Insurance Compliance",
                 status: "Active",
-                patientInvolved: "N/A",
-                jurisdiction: "Federal",
-                assignedTo: "Compliance Officer",
-                incidentDate: "2023-03-22",
-                lastAction: "Audit completed",
-                nextHearing: "2023-08-05"
+                jurisdiction: "Philippine Health Insurance Corp",
+                dueDate: "2023-11-30",
+                documents: [
+                    "MOA with PhilHealth",
+                    "Case Rate Certification",
+                    "Claims Submission Compliance Report"
+                ]
+            },
+
+            // Patient-Related Legal Documents
+            {
+                _id: 3,
+                caseNumber: "PT-2023-C001",
+                title: "Patient Consent Forms Repository",
+                type: "Patient Rights Compliance",
+                status: "Active",
+                jurisdiction: "Hospital Administration",
+                documents: [
+                    "General Consent for Treatment",
+                    "Surgical/Procedure Consent",
+                    "Data Privacy Consent (RA 10173)",
+                    "HIV Testing Consent (RA 11166)"
+                ]
+            },
+            {
+                _id: 4,
+                caseNumber: "PT-2023-M001",
+                title: "Medical Records Subpoena",
+                type: "Court Order Compliance",
+                status: "Pending",
+                jurisdiction: "Regional Trial Court - Branch 12",
+                dueDate: "2023-10-20",
+                documents: [
+                    "Subpoena Duces Tecum",
+                    "Certified Medical Records",
+                    "Affidavit of Compliance"
+                ]
+            },
+
+            // Employment and HR Documents
+            {
+                _id: 5,
+                caseNumber: "HR-2023-C001",
+                title: "Collective Bargaining Agreement",
+                type: "Labor Relations",
+                status: "Active",
+                jurisdiction: "DOLE-NCR",
+                documents: [
+                    "CBA with Hospital Employees Union",
+                    "Salary Standardization Documents",
+                    "Benefits Package Agreement"
+                ]
+            },
+            {
+                _id: 6,
+                caseNumber: "HR-2023-D001",
+                title: "Physician Non-Compete Agreement",
+                type: "Employment Contract",
+                status: "Enforcement",
+                jurisdiction: "Hospital Legal Office",
+                documents: [
+                    "Specialist Employment Contract",
+                    "Non-Compete Clause",
+                    "Restrictive Covenant Agreement"
+                ]
+            },
+
+            // Property and Business Documents
+            {
+                _id: 7,
+                caseNumber: "PROP-2023-L001",
+                title: "Hospital Land Lease Agreement",
+                type: "Property Management",
+                status: "Active",
+                jurisdiction: "City Government of Manila",
+                dueDate: "2025-06-30",
+                documents: [
+                    "Notarized Lease Contract",
+                    "Real Property Tax Clearance",
+                    "Zoning Compliance Certificate"
+                ]
+            },
+            {
+                _id: 8,
+                caseNumber: "TAX-2023-R001",
+                title: "BIR Tax Compliance Documents",
+                type: "Taxation",
+                status: "Annual Renewal",
+                jurisdiction: "BIR Revenue District Office",
+                dueDate: "2024-04-15",
+                documents: [
+                    "Annual Income Tax Return",
+                    "Withholding Tax Certificates",
+                    "VAT Returns (if applicable)"
+                ]
+            },
+
+            // Medical Malpractice Cases
+            {
+                _id: 9,
+                caseNumber: "CIV-2023-001",
+                title: "Wrongful Death Claim - Emergency Room Delay",
+                type: "Medical Malpractice",
+                status: "Pre-Litigation",
+                jurisdiction: "Quezon City RTC",
+                incidentDate: "2023-03-15",
+                potentialLiability: "₱5,000,000",
+                documents: [
+                    "ER Logs and Triage Records",
+                    "Physician Notes",
+                    "Incident Report",
+                    "Witness Statements"
+                ]
+            },
+            {
+                _id: 10,
+                caseNumber: "ADM-2023-001",
+                title: "PRC Complaint - Surgical Complication",
+                type: "Professional Regulation",
+                status: "Under Investigation",
+                jurisdiction: "Professional Regulation Commission",
+                physicianInvolved: "Dr. Juan Dela Cruz (License #123456)",
+                documents: [
+                    "Operative Report",
+                    "Informed Consent Documentation",
+                    "Peer Review Findings"
+                ]
             }
         ],
         medicalDocuments: [
@@ -156,7 +282,8 @@ function HospitalAdminData({ userData }) {
     const [canViewData, setCanViewData] = useState(true);
     const [canBackupRecover, setCanBackupRecover] = useState(true);
     const [unblurredRows, setUnblurredRows] = useState({});
-    const [role, setRole] = useState(userData.role)
+    const [role, setRole] = useState(userData.role);
+    const [allUnblurred, setAllUnblurred] = useState(false);
 
     // Backup and recovery functions
     const handleManualBackup = () => {
@@ -201,8 +328,12 @@ function HospitalAdminData({ userData }) {
         }));
     };
 
+    const toggleAllBlur = () => {
+        setAllUnblurred(!allUnblurred);
+    };
+
     const renderBlurredCell = (value, rowId) => (
-        <span className={`transition-all duration-200 ${canViewData && unblurredRows[rowId] ? '' : 'filter blur-sm'}`}>
+        <span className={`transition-all duration-200 ${(canViewData && (unblurredRows[rowId] || allUnblurred)) ? '' : 'filter blur-sm'}`}>
             {value}
         </span>
     );
@@ -612,7 +743,7 @@ function HospitalAdminData({ userData }) {
                     </div>
                 )}
                 
-                <div className="flex gap-4 mb-4">
+                <div className="flex flex-wrap gap-4 mb-4">
                     {!isBackupLoading ? (
                         <button 
                             onClick={handleManualBackup} 
@@ -642,7 +773,15 @@ function HospitalAdminData({ userData }) {
                     >
                         {isRecoverAllLoading ? "Recovering..." : "Recover All Data"}
                     </button>
-                    
+
+                    {role === 'Superadmin' && (
+                        <button
+                            onClick={toggleAllBlur}
+                            className={`btn ${allUnblurred ? 'btn-success' : 'btn-info'}`}
+                        >
+                            {allUnblurred ? 'Enable Blur' : 'Disable Blur'}
+                        </button>
+                    )}
                 </div>
 
                 <div className="relative">

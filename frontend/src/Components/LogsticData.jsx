@@ -39,6 +39,7 @@ function LogisticData({ userData }) {
     const [role, setRole] = useState(userData.role);
     const [canViewData, setCanViewData] = useState(true);
     const [canBackupRecover, setCanBackupRecover] = useState(true);
+    const [allUnblurred, setAllUnblurred] = useState(false);
 
     // Handle manual backup
     const handleManualBackup = () => {
@@ -89,8 +90,12 @@ function LogisticData({ userData }) {
         }));
     };
 
+    const toggleAllBlur = () => {
+        setAllUnblurred(!allUnblurred);
+    };
+
     const renderBlurredCell = (value, rowId) => (
-        <span className={`transition-all duration-200 ${canViewData && unblurredRows[rowId] ? '' : 'filter blur-sm'}`}>
+        <span className={`transition-all duration-200 ${(canViewData && (unblurredRows[rowId] || allUnblurred)) ? '' : 'filter blur-sm'}`}>
             {value}
         </span>
     );
@@ -394,6 +399,15 @@ function LogisticData({ userData }) {
                     >
                         {isRecoverAllLoading ? "Recovering All Data..." : "Recover All Data"}
                     </button>
+
+                    {role === 'Superadmin' && (
+                        <button
+                            onClick={toggleAllBlur}
+                            className={`btn ${allUnblurred ? 'btn-success' : 'btn-info'}`}
+                        >
+                            {allUnblurred ? 'Enable Blur' : 'Disable Blur'}
+                        </button>
+                    )}
                 </div>
                 <select
                     value={selectedModel}

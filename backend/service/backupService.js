@@ -5,89 +5,175 @@ const budgetRecord = require('../models/financeData/budgetRecordsModel');
 const financialReportRecord = require('../models/financeData/financialReportModel');
 const insuranceClaimRecord = require("../models/financeData/insuranceClaimsModel");
 const userDataRecord = require('../models/financeData/users');
+const backupLogs = require('../models/backupModel')
+
+// Function to create backup logs
+const createBackupLog = async (department, entity, action, details = {}) => {
+    try {
+        const logEntry = await backupLogs.create({
+            department,
+            entity,
+            action,
+            date: new Date(),
+            details
+        });
+        return logEntry;
+    } catch (logError) {
+        console.error(`[${new Date().toISOString()}] Failed to create backup log:`, logError);
+        throw logError; // Re-throw if you want to handle this differently
+    }
+};
+
 
 exports.getFinanceData = async () => {
+    const startTime = new Date();
+    console.log(`[${startTime.toISOString()}] Manual Back Up for Finance Initialized...`);
+
     try {
-        console.log(`[${new Date().toISOString()}] Manual Back Up for Finance Initialized...... `);
         // Fetch data from the external API
         const result = await axios.get('https://backend-finance.nodadogenhospital.com/api/get-data');
         const data = result.data;
 
-        // Function to check if a document exists in the database
-        const documentExists = async (model, query) => {
-            const existingDoc = await model.findOne(query);
-            return existingDoc !== null;
+        // Generic function to backup data for a specific model
+        const backupData = async (model, data, entityName) => {
+            let savedCount = 0;
+            let skippedCount = 0;
+            const errors = [];
+
+            if (!data || !Array.isArray(data)) {
+                console.warn(`[${new Date().toISOString()}] No data array provided for ${entityName}`);
+                return {
+                    entity: entityName,
+                    saved: 0,
+                    skipped: 0,
+                    errors: 0
+                };
+            }
+
+            for (const item of data) {
+                try {
+                    if (!item || !item._id) {
+                        errors.push({
+                            item,
+                            error: "Invalid item format - missing _id"
+                        });
+                        continue;
+                    }
+
+                    const exists = await model.findOne({ _id: item._id });
+                    if (!exists) {
+                        await model.create(item);
+                        savedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                } catch (error) {
+                    errors.push({
+                        itemId: item?._id,
+                        error: error.message
+                    });
+                    console.error(`[${new Date().toISOString()}] Error saving ${entityName} record ${item?._id}:`, error);
+                }
+            }
+
+            // Create log for this entity
+            await createBackupLog(
+                'Finance',
+                entityName,
+                'backup',
+                {
+                    totalRecords: data.length,
+                    saved: savedCount,
+                    skipped: skippedCount,
+                    errors: errors.length,
+                    ...(errors.length > 0 && { sampleError: errors[0] }) // Include first error as sample
+                }
+            );
+
+            return {
+                entity: entityName,
+                saved: savedCount,
+                skipped: skippedCount,
+                errors: errors.length
+            };
         };
 
-        // Logging function for saved data
-        const logSavedData = (modelName, data) => {
-            console.log(`[${new Date().toISOString()}] Saved ${modelName}:`, JSON.stringify(data, null, 2));
+        // Backup all entities
+        const backupResults = await Promise.allSettled([
+            backupData(billingRecord, data.billing, 'Billing'),
+            backupData(budgetHistoryRecord, data.budgetingHistory, 'BudgetHistory'),
+            backupData(budgetRecord, data.budget, 'Budget'),
+            backupData(financialReportRecord, data.financialReport, 'FinancialReport'),
+            backupData(insuranceClaimRecord, data.insuranceClaims, 'InsuranceClaim'),
+            backupData(userDataRecord, data.user, 'User')
+        ]);
+
+        // Process results
+        const successfulResults = backupResults
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value);
+
+        const failedResults = backupResults
+            .filter(result => result.status === 'rejected')
+            .map(result => result.reason);
+
+        // Create summary
+        const summary = {
+            totalEntities: successfulResults.length,
+            totalRecords: successfulResults.reduce((sum, r) => sum + (r.saved + r.skipped), 0),
+            totalSaved: successfulResults.reduce((sum, r) => sum + r.saved, 0),
+            totalSkipped: successfulResults.reduce((sum, r) => sum + r.skipped, 0),
+            totalErrors: successfulResults.reduce((sum, r) => sum + r.errors, 0),
+            failedEntities: failedResults.length,
+            durationMs: new Date() - startTime
         };
 
-        // Logging function for already saved data
-        logAlreadySavedData = (modelName, data) => {
-            console.log(`[${new Date().toISOString()}] No backup needed for ${modelName}: Data already exists`);
+        // Create summary log
+        await createBackupLog(
+            'Finance',
+            'All',
+            'backup-summary',
+            {
+                ...summary,
+                ...(failedResults.length > 0 && { 
+                    failedEntitiesDetails: failedResults.map(f => f.message) 
+                })
+            }
+        );
+
+        console.log(`[${new Date().toISOString()}] Manual Back Up for Finance Completed`, summary);
+        
+        if (failedResults.length > 0) {
+            console.warn(`[${new Date().toISOString()}] Some entities failed to backup:`, failedResults);
+        }
+
+        return { 
+            success: true,
+            message: "Data synchronization completed",
+            details: summary,
+            ...(failedResults.length > 0 && { warnings: failedResults })
         };
 
-        // Save billing data
-        for (const billing of data.billing) {
-            const exists = await documentExists(billingRecord, { _id: billing._id });
-            if (!exists) {
-                await billingRecord.create(billing);
-                logSavedData('Billing', billing);
-            }
-        }
-
-        // Save budget history data
-        for (const budgetHistory of data.budgetingHistory) {
-            const exists = await documentExists(budgetHistoryRecord, { _id: budgetHistory._id });
-            if (!exists) {
-                await budgetHistoryRecord.create(budgetHistory);
-                logSavedData('Budget History', budgetHistory);
-            }
-        }
-
-        // Save budget data
-        for (const budget of data.budget) {
-            const exists = await documentExists(budgetRecord, { _id: budget._id });
-            if (!exists) {
-                await budgetRecord.create(budget);
-                logSavedData('Budget', budget);
-            }
-        }
-
-        // Save financial report data
-        for (const financialReport of data.financialReport) {
-            const exists = await documentExists(financialReportRecord, { _id: financialReport._id });
-            if (!exists) {
-                await financialReportRecord.create(financialReport);
-                logSavedData('Financial Report', financialReport);
-            }
-        }
-
-        // Save insurance claim data
-        for (const insuranceClaim of data.insuranceClaims) {
-            const exists = await documentExists(insuranceClaimRecord, { _id: insuranceClaim._id });
-            if (!exists) {
-                await insuranceClaimRecord.create(insuranceClaim);
-                logSavedData('Insurance Claim', insuranceClaim);
-            }
-        }
-
-        // Save user data
-        for (const user of data.user) {
-            const exists = await documentExists(userDataRecord, { _id: user._id });
-            if (!exists) {
-                await userDataRecord.create(user);
-                logSavedData('User', user);
-            }
-        }
-
-        console.log(`[${new Date().toISOString()}] Manual Back Up for Finance Done `);
-        return { message: "Data synchronization completed successfully." };
     } catch (error) {
+        // Create error log
+        await createBackupLog(
+            'Finance',
+            'All',
+            'backup-failed',
+            {
+                error: error.message,
+                ...(error.stack && { stack: error.stack.split('\n') }),
+                timeElapsedMs: new Date() - startTime
+            }
+        );
+
         console.error(`[${new Date().toISOString()}] Error during data synchronization:`, error);
-        throw error;
+        throw {
+            success: false,
+            message: "Data synchronization failed",
+            error: error.message,
+            timeElapsedMs: new Date() - startTime
+        };
     }
 };
 

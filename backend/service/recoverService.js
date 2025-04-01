@@ -6,9 +6,42 @@ const budgetRecord = require('../models/financeData/budgetRecordsModel');
 const financialReportRecord = require('../models/financeData/financialReportModel');
 const insuranceClaimRecord = require("../models/financeData/insuranceClaimsModel");
 const userDataRecord = require('../models/financeData/users');
+const recoveryLogs = require('../models/recoveryModel');
+
+
+const createRecoveryLog = async (department, entity, action, details = {}) => {
+    try {
+        const logEntry = await recoveryLogs.create({
+            department,
+            entity,
+            action,
+            date: new Date(),
+            details
+        });
+        return logEntry;
+    } catch (logError) {
+        console.error('Failed to create recovery log:', logError);
+        throw logError;
+    }
+};
 
 exports.dataRecover = async ({ id, model }) => {
+    const startTime = new Date();
+    let logDetails = {
+        recordId: id,
+        modelType: model,
+        status: 'started'
+    };
+
     try {
+        // Create initial log
+        await createRecoveryLog(
+            'Finance',
+            model,
+            'recovery-attempt',
+            logDetails
+        );
+
         let record;
 
         // Determine the correct model based on the request
@@ -36,26 +69,61 @@ exports.dataRecover = async ({ id, model }) => {
         }
 
         if (!record) {
+            logDetails.status = 'failed';
+            logDetails.error = 'Record not found';
+            await createRecoveryLog('Finance', model, 'recovery-failed', logDetails);
             throw new Error("Record not found");
         }
 
         // Send the recovered data to the finance server API
         const financeServerUrl = process.env.FINANCE_SERVER_API_URL; 
         const response = await axios.post(`${financeServerUrl}/finance-recovery/save`, {
-            model, // Send the model name
-            data: record // Send the record data
+            model,
+            data: record
         });
 
-        // Return the response from the finance server
+        // Log successful recovery
+        logDetails.status = 'completed';
+        logDetails.durationMs = new Date() - startTime;
+        logDetails.response = {
+            status: response.status,
+            statusText: response.statusText
+        };
+        
+        await createRecoveryLog('Finance', model, 'recovery-success', logDetails);
+
         return response.data;
     } catch (error) {
+        // Log the error
+        logDetails.status = 'failed';
+        logDetails.error = error.message;
+        logDetails.durationMs = new Date() - startTime;
+        logDetails.stack = error.stack?.split('\n');
+        
+        await createRecoveryLog('Finance', model, 'recovery-failed', logDetails);
+
         console.error("Error in recovery service:", error.message);
         throw error;
     }
 };
 
 exports.recoverAllData = async (model) => {
+    const startTime = new Date();
+    let logDetails = {
+        modelType: model,
+        status: 'started',
+        recoveryType: 'full'
+    };
+
     try {
+        // Create initial log
+        await createRecoveryLog(
+            'Finance',
+            model,
+            'bulk-recovery-attempt',
+            logDetails
+        );
+
         let records;
 
         // Determine the correct model based on the request
@@ -83,19 +151,40 @@ exports.recoverAllData = async (model) => {
         }
 
         if (!records || records.length === 0) {
+            logDetails.status = 'failed';
+            logDetails.error = 'No records found';
+            await createRecoveryLog('Finance', model, 'bulk-recovery-failed', logDetails);
             throw new Error("No records found for the specified model");
         }
 
         // Send the recovered data to the finance server API
         const financeServerUrl = process.env.FINANCE_SERVER_API_URL; 
         const response = await axios.post(`${financeServerUrl}/finance-recovery/save`, {
-            model, // Send the model name
-            data: records // Send all records
+            model,
+            data: records
         });
 
-        // Return the response from the finance server
+        // Log successful recovery
+        logDetails.status = 'completed';
+        logDetails.durationMs = new Date() - startTime;
+        logDetails.recordsRecovered = records.length;
+        logDetails.response = {
+            status: response.status,
+            statusText: response.statusText
+        };
+        
+        await createRecoveryLog('Finance', model, 'bulk-recovery-success', logDetails);
+
         return response.data;
     } catch (error) {
+        // Log the error
+        logDetails.status = 'failed';
+        logDetails.error = error.message;
+        logDetails.durationMs = new Date() - startTime;
+        logDetails.stack = error.stack?.split('\n');
+        
+        await createRecoveryLog('Finance', model, 'bulk-recovery-failed', logDetails);
+
         console.error("Error in recoverAllData service:", error.message);
         throw error;
     }

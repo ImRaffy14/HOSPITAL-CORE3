@@ -12,6 +12,7 @@ const accountRoutes = require('./routes/accountRoutes')
 const monitorSocket = require('./service/monitorService')
 const backupRoutes = require('./routes/backupRoutes')
 const recoveryRoutes = require('./routes/recoveryRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 //Middlewares
 const app = express();
@@ -45,6 +46,7 @@ app.use('/auth-api', authRoutes);
 app.use('/accounts', accountRoutes);
 app.use('/api', backupRoutes)
 app.use('/api/recovery', recoveryRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)

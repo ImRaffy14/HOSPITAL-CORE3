@@ -13,3 +13,12 @@ POST http://localhost:8060/api/recovery/recover-data
 ## RECOVER ALL DATA TO FINANCE
 ###
 POST http://localhost:8060/api/recovery/recover-all
+
+## Dashboard
+###
+GET http://localhost:8060/api/dashboard/stats
+
+## Dashboard
+###
+GET http://localhost:8060/api/dashboard/backups/recent?limit=4
+
